@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1217">
+<title>Пілот — жестово-голосовий WebAR-тренажер</title>
+<link rel="stylesheet" href="./style.css">
+<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
+<script type="module" src="./app.js"></script>
+</head>
+<body>
+<video id="camVideo" muted playsinline></video>
+<div class="app-shell">
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">✦</span><div><strong>ПІЛОТ</strong><small>WEBAR FLIGHT TRAINER</small></div></div>
+    <div class="top-tags"><span class="tag live"><i></i> СИМУЛЯТОР</span><span class="tag">ПРОЦЕДУРНА МІСЦЕВІСТЬ</span></div>
+    <button class="icon-button" id="helpButton" title="Підказка">?</button>
+  </header>
+  <main class="flight-layout">
+    <section class="scene-wrap">
+      <a-scene id="flightScene" embedded renderer="antialias: true; alpha: true; colorManagement: true" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+        <a-entity id="worldRoot"></a-entity>
+        <a-entity id="drone" position="0 28 0">
+          <a-box position="0 0 0" width="1.1" height=".22" depth=".9" color="#f3a64d" material="metalness:.42; roughness:.42"></a-box>
+          <a-box position="0 .18 -.42" width=".22" height=".13" depth=".42" color="#ffe1ad"></a-box>
+          <a-cylinder position="-.82 .08 0" radius=".045" height="1.65" rotation="0 0 90" color="#9eb1bb"></a-cylinder>
+          <a-cylinder position=".82 .08 0" radius=".045" height="1.65" rotation="0 0 90" color="#9eb1bb"></a-cylinder>
+          <a-torus position="-.82 .18 -.06" radius=".37" radius-tubular=".025" color="#63e4bd"></a-torus>
+          <a-torus position=".82 .18 -.06" radius=".37" radius-tubular=".025" color="#63e4bd"></a-torus>
+          <a-sphere position="0 -.02 -.48" radius=".15" color="#d3f5f1"></a-sphere>
+        </a-entity>
+        <a-entity id="simCamera" camera="active: true; fov: 76" look-controls="enabled: false"></a-entity>
+        <a-entity light="type: ambient; intensity: 1.15; color: #c7d6da"></a-entity>
+        <a-entity light="type: directional; intensity: 2.1; color: #fff0d6" position="-12 24 8"></a-entity>
+      </a-scene>
+      <canvas id="sceneFallback" aria-label="Схематична симуляція польоту"></canvas>
+      <div class="scene-vignette"></div>
+      <div class="hud-top"><div class="flight-state"><span id="flightLed"></span><span id="flightStatus">ПОЛІТ НЕ РОЗПОЧАТО</span></div><div class="coords" id="coords">X 000 · Y 028 · Z 000</div></div>
+      <div class="hud-stats"><div><small>ШВИДКІСТЬ</small><strong><span id="speedRead">0.0</span><em> м/с</em></strong></div><div><small>ВИСОТА</small><strong><span id="altRead">28</span><em> м</em></strong></div><div><small>КУРС</small><strong><span id="headingRead">000</span><em>°</em></strong></div><div><small>КІЛЬЦЯ</small><strong><span id="scoreRead">0</span><em> / ∞</em></strong></div></div>
+      <div class="target-chip"><span class="target-dot"></span><span id="targetText">МАРШРУТ: вільний політ</span></div>
+      <div class="map-card"><div class="map-head"><b>КАРТА ПОЛЬОТУ</b><span>процедурна</span></div><canvas id="terrainMap" width="240" height="160"></canvas><div class="map-legend"><i class="terrain"></i> рельєф <i class="route"></i> маршрут <i class="drone-dot"></i> дрон</div></div>
+      <div class="pip-card" id="pipCard"><div class="pip-title">CHASE VIEW <span>3RD PERSON</span></div><canvas id="pipCanvas" width="300" height="180"></canvas></div>
+      <div class="toast" id="toast"></div>
+    </section>
+    <aside class="control-panel">
+      <div class="panel-heading"><div><small>ПАНЕЛЬ ПІЛОТА</small><h1>Політ у долині</h1></div><button class="plain-button" id="resetButton">Скинути</button></div>
+      <div class="button-row"><button class="primary-button" id="startButton">▶ Почати політ</button><button class="secondary-button" id="pauseButton" disabled>Ⅱ Пауза</button></div>
+      <div class="control-block">
+        <div class="block-title"><span>РЕЖИМИ ВИДУ</span><span class="muted">перемикаються окремо від фізики</span></div>
+        <div class="view-tabs"><button class="view-button active" data-view="fpv">FPV</button><button class="view-button" data-view="chase">3-тя особа</button><button class="view-button" data-view="split">Тренування</button></div>
+        <p class="small-note">FPV — весь екран від камери дрона. «Тренування» — FPV на весь екран і мале chase-вікно збоку.</p>
+      </div>
+      <div class="control-block">
+        <div class="block-title"><span>МАРШРУТ</span><span class="muted">нескінченний полігон</span></div>
+        <div class="view-tabs route-tabs"><button class="route-button active" data-route="free">Вільний</button><button class="route-button" data-route="rings">Кільця</button><button class="route-button" data-route="targets">Цілі</button></div>
+        <label class="range-label"><span>Обмеження швидкості</span><b><span id="maxSpeedText">12</span> м/с</b></label>
+        <input id="speedLimit" type="range" min="4" max="24" value="12">
+        <p class="small-note">Світ і маршрут прокручуються без кінця; рельєф перебудовується навколо дрона.</p>
+      </div>
+      <div class="control-block">
+        <div class="block-title"><span>КАНАЛИ КЕРУВАННЯ</span></div>
+        <div class="switch-line"><label><input type="checkbox" id="analogSwitch" checked><span class="switch"></span><span>Аналогові жести</span></label><span class="channel-state" id="analogState">увімкнено</span></div>
+        <div class="switch-line"><label><input type="checkbox" id="discreteSwitch"><span class="switch"></span><span>Дискретні жести</span></label><span class="channel-state" id="discreteState">вимкнено</span></div>
+        <div class="switch-line"><label><input type="checkbox" id="voiceSwitch"><span class="switch"></span><span>Голос uk-UA</span></label><span class="channel-state" id="voiceState">вимкнено</span></div>
+        <div class="preset-row"><button id="gesturePreset">Лише жести</button><button id="hybridPreset">Гібрид C</button></div>
+      </div>
+      <div class="control-block">
+        <div class="block-title"><span>РУКА Й КАМЕРА</span><span class="muted" id="handStatus">камеру вимкнено</span></div>
+        <div class="camera-row"><div class="camera-box"><canvas id="handCanvas" width="320" height="240"></canvas><video id="handPreview" muted playsinline></video><span id="handHint">Увімкніть камеру</span></div><div class="camera-actions"><button class="secondary-button compact" id="cameraButton">◎ Камера + руки</button><button class="secondary-button compact" id="calibrateButton">◉ Калібрувати 6 с</button><button class="plain-button compact" id="arButton">Камера-фон: вимкнено</button></div></div>
+        <div class="calibration" id="calibrationText">Калібрування: 2 с нейтральна рука, 2 с зімкнути щіпку, 2 с розкрити.</div>
+      </div>
+      <div class="control-block">
+        <div class="block-title"><span>КОМАНДИ ТА МІКРОФОН</span><span class="muted" id="micStatus">неактивний</span></div>
+        <div class="voice-row"><button class="secondary-button compact" id="micButton">🎙 Увімкнути голос</button><span class="last-command" id="lastCommand">Команд ще не було</span></div>
+        <div class="small-note">«стоп», «продовжити», «FPV», «третя особа», «тренування», «кільця», «цілі», «швидше», «повільніше».</div>
+      </div>
+      <div class="control-block manual-controls">
+        <div class="block-title"><span>КНОПКИ НА ЕКРАНІ</span><span class="muted">або WASD · Q/E · R/F · Space</span></div>
+        <div class="button-grid">
+          <button data-axis="pitch" data-value="1">↑ Ніс уперед</button><button data-axis="throttle" data-value="1">▲ Підйом</button><button data-axis="pitch" data-value="-1">↓ Гальмувати</button>
+          <button data-axis="roll" data-value="-1">← Крен</button><button data-axis="yaw" data-value="1">↶ Рискання</button><button data-axis="roll" data-value="1">Крен →</button>
+          <span></span><button data-axis="throttle" data-value="-1">▼ Спуск</button><span></span>
+        </div>
+      </div>
+      <div class="footer-note">Камера й голос запускаються лише після натискання. Голос має резервні кнопки та клавіші.</div>
+    </aside>
+  </main>
+  <div class="help-modal" id="helpModal" hidden>
+    <div class="help-card"><button class="close-button" id="closeHelp">×</button><small>ЯК КЕРУВАТИ</small><h2>Долоня до камери, пальці вгору</h2><ul><li>Рука ліворуч/праворуч від центру — крен і переміщення вбік.</li><li>Рука вище/нижче центра — тангаж: прискоритися вперед / загальмувати.</li><li>Нахил кисті в площині кадру — рискання.</li><li>Щіпка: зведіть великий і вказівний пальці — зниження; середня відстань із калібрування — зависання; розведіть — підйом.</li><li>Кулак утримати 0,7 с — пауза; V-поза 0,7 с — зміна виду; розкрита долоня 0,7 с — продовжити.</li></ul><p>Для надійного зчитування тримайте долоню перед камерою. Поворот кисті ребром або долонею догори модель може зчитувати гірше.</p><button class="primary-button" id="closeHelp2">Зрозуміло</button></div>
+  </div>
+</div>
+</body>
+</html>

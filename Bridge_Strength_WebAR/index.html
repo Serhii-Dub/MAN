@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111712">
+<title>МістЛаб — WebAR-симулятор міцності мостів</title>
+<link rel="stylesheet" href="./style.css">
+<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
+<script type="module" src="./app.js"></script>
+</head>
+<body>
+<video id="camVideo" muted playsinline></video>
+<div class="app">
+<header class="topbar"><div class="brand"><span class="brand-mark">M</span><div><strong>МІСТЛАБ</strong><small>WEBAR STRUCTURE SIMULATOR</small></div></div><div class="title-wrap"><span class="eyebrow">НАВЧАЛЬНИЙ ІНЖЕНЕРНИЙ ТРЕНАЖЕР</span><h1>Міцність балок і мостів</h1></div><button class="help-btn" id="helpButton">Як керувати?</button></header>
+<main class="layout">
+<aside class="left-panel">
+<div class="section-head"><span>01 / КОНСТРУКЦІЯ</span><span class="chip">3D + РОЗРАХУНОК</span></div>
+<label class="field-label">Тип мосту</label>
+<div class="bridge-types" id="bridgeTypes"><button class="type-btn active" data-bridge="beam"><b>━━━━</b><span>Балковий</span></button><button class="type-btn" data-bridge="warren"><b>△△△</b><span>Ферменний</span></button><button class="type-btn" data-bridge="arch"><b>⌒</b><span>Арковий</span></button></div>
+<div class="field-grid"><label class="field-label">Матеріал<select id="material"><option value="steel">Сталь</option><option value="aluminum">Алюміній</option><option value="wood">Деревина</option></select></label><label class="field-label">Профіль<select id="profile"><option value="rect">Прямокутний</option><option value="tube">Порожниста труба</option><option value="ibeam">Двотавр</option></select></label></div>
+<div class="range-row"><label for="spanRange">Проліт L</label><b><span id="spanValue">30</span> м</b></div><input id="spanRange" type="range" min="15" max="60" value="30">
+<div class="range-row"><label for="heightRange">Висота ферми/арки H</label><b><span id="heightValue">5</span> м</b></div><input id="heightRange" type="range" min="3" max="10" value="5">
+<div class="profile-info" id="profileInfo">A = — · I = — · c = —</div>
+<div class="section-head second"><span>02 / НАВАНТАЖЕННЯ</span><span class="muted">можна рухати вздовж мосту</span></div>
+<label class="field-label">Сценарій навантаження<select id="loadPattern"><option value="point">Точковий вантаж</option><option value="car">Автомобіль · 2 осі</option><option value="construction">Будівельна техніка · 3 осі</option><option value="uniform">Матеріали по всьому прольоту</option></select></label>
+<div class="range-row"><label for="forceRange">Загальна сила F</label><b><span id="forceValue">200</span> кН</b></div><input id="forceRange" type="range" min="0" max="900" step="10" value="200">
+<div class="range-row"><label for="positionRange">Положення вантажу</label><b><span id="positionValue">50</span>%</b></div><input id="positionRange" type="range" min="0" max="100" value="50">
+<div class="button-grid"><button id="leftButton">← Вліво</button><button id="forceDown">− Сила</button><button id="rightButton">Вправо →</button><button id="forceUp">+ Сила</button></div>
+<div class="run-row"><button class="primary" id="runButton">▶ Прогін навантаження</button><button class="secondary" id="resetButton">Скинути</button></div>
+<p class="hint">Клавіші: ←/→ переміщують вантаж, ↑/↓ змінюють силу, Space — прогін.</p>
+</aside>
+<section class="visual-panel">
+<div class="visual-head"><div><span class="eyebrow">МОДЕЛЬ НА ОПОРАХ</span><strong id="sceneTitle">Балка на двох опорах</strong></div><div class="visual-actions"><button class="camera-toggle" id="arButton">◎ Накладення на камеру</button><span class="pill" id="calcState">РОЗРАХУНОК ГОТОВИЙ</span></div></div>
+<div class="scene-box">
+<a-scene id="bridgeScene" embedded renderer="antialias: true; alpha: true; colorManagement: true" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+<a-entity id="bridgeRoot"></a-entity>
+<a-plane position="0 0 0" rotation="-90 0 0" width="40" height="30" color="#1c2922" material="roughness:1; metalness:0"></a-plane>
+<a-entity id="bridgeCamera" camera="active:true; fov:48" look-controls="enabled:false" position="0 6 22" rotation="-9 0 0"></a-entity>
+<a-entity light="type: ambient; intensity:1.2; color:#e5f2e6"></a-entity>
+<a-entity light="type: directional; intensity:2; color:#fff2d7" position="-8 16 9"></a-entity>
+</a-scene>
+<canvas id="bridgeFallback" aria-label="Схематична модель мосту"></canvas>
+<div class="scene-overlay"><span>НАВАНТАЖЕННЯ <b id="sceneForce">200 кН</b></span><span>ВІЗУАЛЬНИЙ ПРОГИН <b>×30</b></span></div>
+<div class="scene-caption" id="sceneCaption">Модель: шарнірна опора + роликова опора</div>
+<div class="ar-badge" id="arBadge">CAMERA PASS-THROUGH · БЕЗ ПРИВ’ЯЗКИ ДО ПЛОЩИНИ</div>
+</div>
+<div class="legend"><span><i class="safe"></i> низьке напруження</span><span><i class="warn"></i> наближення до межі</span><span><i class="danger"></i> понад навчальний поріг</span><span class="legend-note">Форма деформації збільшена; числові значення — реальні за моделлю.</span></div>
+<div class="explain" id="explainText">Пересувайте вантаж або змінюйте силу. Дивіться, як змінюється прогин і напруження.</div>
+</section>
+<aside class="right-panel">
+<div class="section-head"><span>03 / РЕЗУЛЬТАТИ</span><span class="chip pale">МОДЕЛЬНА ОЦІНКА</span></div>
+<div class="metric-card"><div><small>МАКСИМАЛЬНИЙ ПРОГИН</small><strong><span id="deflectionValue">—</span><em> мм</em></strong></div><div class="metric-icon">↕</div></div>
+<div class="metric-card"><div><small>МАКС. НАПРУЖЕННЯ</small><strong><span id="stressValue">—</span><em> МПа</em></strong></div><div class="metric-icon">σ</div></div>
+<div class="util-card"><div class="util-head"><small>ВИКОРИСТАННЯ НАВЧАЛЬНОЇ МЕЖІ</small><b><span id="utilValue">—</span>%</b></div><div class="meter"><i id="utilMeter"></i></div><p id="utilText">Виберіть конструкцію та навантаження.</p></div>
+<div class="metric-card"><div><small id="secondaryLabel">МАКСИМАЛЬНИЙ ЗГИНАЛЬНИЙ МОМЕНТ</small><strong><span id="momentValue">—</span><em id="secondaryUnit"> кН·м</em></strong></div><div class="metric-icon">M</div></div>
+<div class="result-note" id="materialNote">Матеріал: Сталь · E = 200 ГПа · умовна допустима напруга 160 МПа.</div>
+<div class="formula-card"><small>МОДЕЛЬ</small><strong id="formulaTitle">δ = F·L³ / (48·E·I)</strong><p id="formulaNote">Для балки з центральним точковим вантажем. Інші позиції — суперпозиція.</p></div>
+<div class="disclaimer">Навчальна лінійно-пружна модель. Не використовувати для проєктування або оцінки безпеки реального мосту.</div>
+</aside>
+</main>
+<footer class="bottom-bar">
+<div class="channels"><span class="footer-label">КАНАЛИ</span><label><input type="checkbox" id="analogSwitch" checked><i></i>Аналогові жести</label><label><input type="checkbox" id="discreteSwitch"><i></i>Дискретні жести</label><label><input type="checkbox" id="voiceSwitch"><i></i>Голос uk-UA</label><button class="preset" id="gesturePreset">Лише жести</button><button class="preset" id="hybridPreset">Гібрид C</button></div>
+<div class="hand-controls"><div class="preview"><video id="handPreview" muted playsinline></video><canvas id="handCanvas" width="320" height="240"></canvas><span id="handHint">камера неактивна</span></div><div class="voice-controls"><button class="secondary small" id="cameraButton">◎ Камера + руки</button><button class="secondary small" id="calibrateButton">◉ Калібрувати</button><button class="secondary small" id="micButton">🎙 Голос</button><span id="handStatus">вимкнено</span><span id="micStatus">мікрофон неактивний</span></div><div class="last-command" id="lastCommand">Очікування команди</div></div>
+</footer>
+<div class="help-modal" id="helpModal" hidden><div class="help-card"><button id="closeHelp" class="close">×</button><span class="eyebrow">ПОЗА ДОЛОНІ</span><h2>Долоня до камери, пальці вгору</h2><ul><li>Рука ліворуч/праворуч від центра пересуває вантаж уздовж мосту.</li><li>Щіпка: зімкнути великий і вказівний — F=0; розвести — сила зростає до Fmax.</li><li>Кулак утримати 0,7 с — обнулити навантаження; V-поза 0,7 с — перейти до наступного типу мосту.</li><li>Голос: «балка», «ферма», «арка», «сталь», «алюміній», «деревина», «автомобіль», «будівельна техніка», «матеріали», «порівняти», «скинути».</li></ul><p>Для надійного відстеження не повертайте долоню ребром. Кнопки й клавіші працюють незалежно від камери та мікрофона.</p><button class="primary" id="closeHelp2">Зрозуміло</button></div></div>
+</div>
+</body>
+</html>
