@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0b1217">
 <title>Пілот — жестово-голосовий WebAR-тренажер</title>
+<link rel="icon" href="./favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="./style.css">
 <script type="module" src="./app.js"></script>
 </head>
@@ -12,34 +13,34 @@
 <div class="app-shell">
   <header class="topbar">
     <div class="brand"><span class="brand-mark">✦</span><div><strong>ПІЛОТ</strong><small>WEBAR FLIGHT TRAINER</small></div></div>
-    <div class="top-tags"><span class="tag live"><i></i> СИМУЛЯТОР</span><span class="tag">ПРОЦЕДУРНА МІСЦЕВІСТЬ</span></div>
+      <div class="top-tags"><span class="tag live"><i></i> FPV-ТРЕНАЖЕР</span><span class="tag">3D ПОЛІГОН · НИЗЬКОПОЛІГОНАЛЬНА СЦЕНА</span></div>
     <button class="plain-button" id="fullscreenButton" title="На весь екран">⛶ Екран</button><button class="icon-button" id="helpButton" title="Підказка">?</button>
   </header>
   <main class="flight-layout">
     <section class="scene-wrap">
-      <canvas id="sceneFallback" aria-label="Схематична симуляція польоту"></canvas>
+      <canvas id="sceneFallback" aria-label="FPV-симулятор польоту на тренувальному полігоні"></canvas>
       <div class="scene-vignette"></div>
       <div class="hud-top"><div class="flight-state"><span id="flightLed"></span><span id="flightStatus">ПОЛІТ НЕ РОЗПОЧАТО</span></div><div class="coords" id="coords">X 000 · Y 028 · Z 000</div></div>
       <div class="hud-stats"><div><small>ШВИДКІСТЬ</small><strong><span id="speedRead">0.0</span><em> м/с</em></strong></div><div><small>ВИСОТА</small><strong><span id="altRead">12</span><em> м</em></strong></div><div><small>КУРС</small><strong><span id="headingRead">000</span><em>°</em></strong></div><div><small>КІЛЬЦЯ</small><strong><span id="scoreRead">0</span><em> / ∞</em></strong></div></div>
-      <div class="target-chip"><span class="target-dot"></span><span id="targetText">МАРШРУТ: вільний політ</span></div>
+      <div class="target-chip"><span class="target-dot"></span><span id="targetText">РЕЖИМ: вільний політ над полігоном</span><b id="targetRange"></b></div>
       <div class="map-card"><div class="map-head"><b>КАРТА ПОЛЬОТУ</b><span>процедурна</span></div><canvas id="terrainMap" width="240" height="160"></canvas><div class="map-legend"><i class="terrain"></i> рельєф <i class="route"></i> маршрут <i class="drone-dot"></i> дрон</div></div>
       <div class="pip-card" id="pipCard"><div class="pip-title">CHASE VIEW <span>3RD PERSON</span></div><canvas id="pipCanvas" width="300" height="180"></canvas></div>
       <div class="toast" id="toast"></div>
     </section>
     <aside class="control-panel">
-      <div class="panel-heading"><div><small>ПАНЕЛЬ ПІЛОТА</small><h1>Політ у долині</h1></div><button class="plain-button" id="resetButton">Скинути</button></div>
+        <div class="panel-heading"><div><small>FPV · НАВЧАЛЬНИЙ ПОЛІГОН</small><h1>Політ і перешкоди</h1></div><button class="plain-button" id="resetButton">Скинути</button></div>
       <div class="button-row"><button class="primary-button" id="startButton">▶ Почати політ</button><button class="secondary-button" id="pauseButton" disabled>Ⅱ Пауза</button></div>
       <div class="control-block">
         <div class="block-title"><span>РЕЖИМИ ВИДУ</span><span class="muted">перемикаються окремо від фізики</span></div>
         <div class="view-tabs"><button class="view-button active" data-view="split">FPV + дрон у кутку</button><button class="view-button" data-view="chase">Повний вид ззаду</button></div>
-        <p class="small-note">У першому режимі великий екран показує політ очима дрона, мале вікно постійно показує сам дрон.</p>
+        <p class="small-note">FPV показує політ очима дрона на весь екран; маленьке вікно справа — камера супроводу, щоб бачити сам дрон і його положення.</p>
       </div>
       <div class="control-block">
         <div class="block-title"><span>МАРШРУТ</span><span class="muted">нескінченний полігон</span></div>
-        <div class="view-tabs route-tabs"><button class="route-button active" data-route="free">Прямий політ</button><button class="route-button" data-route="rings">Полігон кілець</button></div>
+        <div class="view-tabs route-tabs"><button class="route-button active" data-route="free">Вільний політ</button><button class="route-button" data-route="rings">Смуга воріт</button><button class="route-button" data-route="orbit">Обліт об’єктів</button></div>
         <label class="range-label"><span>Задана швидкість</span><b><span id="maxSpeedText">12</span> м/с</b></label>
         <input id="speedLimit" type="range" min="0" max="25" step="1" value="12">
-        <p class="small-note">Політ без кінця. На полігоні кільця стоять ліворуч, праворуч і на різній висоті — поверніть та пролетіть крізь них.</p>
+        <p class="small-note">«Смуга воріт»: яскраві ворота видно у сцені й на мапі; вирівняйте дрон і пролітайте крізь отвір. «Обліт об’єктів»: тримайтеся біля позначеної опори й зробіть повне коло. Ліміт швидкості задає максимум у м/с.</p>
       </div>
       <div class="control-block">
         <div class="block-title"><span>СПОСІБ КЕРУВАННЯ</span></div>
@@ -59,7 +60,7 @@
       <div class="control-block">
         <div class="block-title"><span>КОМАНДИ ТА МІКРОФОН</span><span class="muted" id="micStatus">неактивний</span></div>
         <div class="voice-row"><button class="secondary-button compact" id="micButton">🎙 Увімкнути голос</button><span class="last-command" id="lastCommand">Команд ще не було</span></div>
-        <div class="small-note">Скажіть: «старт», «пауза», «продовжити», «полігон кілець», «прямий політ», «швидкість двадцять» або «швидкість 20 метрів за секунду», «перша особа», «третя особа».</div>
+        <div class="small-note">Скажіть: «старт», «пауза», «продовжити», «смуга воріт», «обліт об’єктів», «вільний політ», «швидкість двадцять» або «швидкість 20 метрів за секунду», «перша особа», «третя особа».</div>
       </div>
       <div class="control-block manual-controls">
         <div class="block-title"><span>КНОПКИ НА ЕКРАНІ</span><span class="muted">або стрілки · W/S · Space</span></div>

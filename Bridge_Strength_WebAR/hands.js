@@ -16,7 +16,8 @@ export class HandController {
     this.detector=null;this.stream=null;this.enabled=false;this.startPromise=null;this.startEpoch=0;this.timer=0;
     this.calibration=null;this.calibrated=false;this.center={x:.5,y:.5,theta:0};this.filters={x:[],y:[],theta:[],pinch:[]};
     this.lastVideoTime=-1;this.lastInfer=0;this.lastSeen=0;this.lostSent=false;
-    this.inferenceInterval=105;this.pinchMin=.25;this.pinchMax=1.0;
+    this.lowPower=(navigator.hardwareConcurrency||4)<=4||matchMedia("(max-width: 700px)").matches;
+    this.inferenceInterval=this.lowPower?135:105;this.pinchMin=.25;this.pinchMax=1.0;
   }
   start() {
     if(this.enabled)return Promise.resolve();
@@ -30,7 +31,8 @@ export class HandController {
     if(!navigator.mediaDevices?.getUserMedia)throw new Error("Камера доступна через HTTPS або localhost.");
     this.onStatus("Запит дозволу камери…");
     try {
-      this.stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:"user",width:{ideal:320,max:640},height:{ideal:240,max:480},frameRate:{ideal:15,max:15}}});
+      const cameraSize=this.lowPower?{width:{ideal:256,max:320},height:{ideal:192,max:240},frameRate:{ideal:12,max:15}}:{width:{ideal:320,max:320},height:{ideal:240,max:240},frameRate:{ideal:15,max:15}};
+      this.stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:"user",...cameraSize}});
       if(epoch!==this.startEpoch){this.stream.getTracks().forEach(t=>t.stop());return;}
       this.video.srcObject=this.stream;await this.video.play();
       this.onStatus("Завантаження моделі руки…");
