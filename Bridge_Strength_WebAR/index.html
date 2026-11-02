@@ -4,26 +4,25 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#111712">
-<title>МістЛаб — WebAR-симулятор міцності мостів</title>
+<title>МістЛаб — симулятор міцності мостів</title>
 <link rel="stylesheet" href="./style.css">
-<script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
 <script type="module" src="./app.js"></script>
 </head>
 <body>
-<video id="camVideo" muted playsinline></video>
 <div class="app">
 <header class="topbar"><div class="brand"><span class="brand-mark">M</span><div><strong>МІСТЛАБ</strong><small>WEBAR STRUCTURE SIMULATOR</small></div></div><div class="title-wrap"><span class="eyebrow">НАВЧАЛЬНИЙ ІНЖЕНЕРНИЙ ТРЕНАЖЕР</span><h1>Міцність балок і мостів</h1></div><button class="help-btn" id="helpButton">Як керувати?</button></header>
 <main class="layout">
 <aside class="left-panel">
-<div class="section-head"><span>01 / КОНСТРУКЦІЯ</span><span class="chip">3D + РОЗРАХУНОК</span></div>
+<div class="section-head"><span>01 / КОНСТРУКЦІЯ</span><span class="chip">СХЕМА + РОЗРАХУНОК</span></div>
 <label class="field-label">Тип мосту</label>
 <div class="bridge-types" id="bridgeTypes"><button class="type-btn active" data-bridge="beam"><b>━━━━</b><span>Балковий</span></button><button class="type-btn" data-bridge="warren"><b>△△△</b><span>Ферменний</span></button><button class="type-btn" data-bridge="arch"><b>⌒</b><span>Арковий</span></button></div>
 <div class="field-grid"><label class="field-label">Матеріал<select id="material"><option value="steel">Сталь</option><option value="aluminum">Алюміній</option><option value="wood">Деревина</option></select></label><label class="field-label">Профіль<select id="profile"><option value="rect">Прямокутний</option><option value="tube">Порожниста труба</option><option value="ibeam">Двотавр</option></select></label></div>
 <div class="range-row"><label for="spanRange">Проліт L</label><b><span id="spanValue">30</span> м</b></div><input id="spanRange" type="range" min="15" max="60" value="30">
-<div class="range-row"><label for="heightRange">Висота ферми/арки H</label><b><span id="heightValue">5</span> м</b></div><input id="heightRange" type="range" min="3" max="10" value="5">
+<div id="heightControl"><div class="range-row"><label for="heightRange">Висота ферми/арки H</label><b><span id="heightValue">5</span> м</b></div><input id="heightRange" type="range" min="3" max="10" value="5"></div>
 <div class="profile-info" id="profileInfo">A = — · I = — · c = —</div>
 <div class="section-head second"><span>02 / НАВАНТАЖЕННЯ</span><span class="muted">можна рухати вздовж мосту</span></div>
-<label class="field-label">Сценарій навантаження<select id="loadPattern"><option value="point">Точковий вантаж</option><option value="car">Автомобіль · 2 осі</option><option value="construction">Будівельна техніка · 3 осі</option><option value="uniform">Матеріали по всьому прольоту</option></select></label>
+<label class="field-label">Що їде мостом?<select id="loadPattern"><option value="point">Один вантаж</option><option value="car">Автомобіль · 2 осі</option><option value="construction">Будівельна техніка · 3 осі</option><option value="materials">Вантажівка з матеріалами · 3 осі</option><option value="uniform">Рівномірний шар матеріалів · нерухомий</option></select></label>
+<p class="hint" id="patternNote">Один вантаж рухатиметься по мосту під час прогону.</p>
 <div class="range-row"><label for="forceRange">Загальна сила F</label><b><span id="forceValue">200</span> кН</b></div><input id="forceRange" type="range" min="0" max="900" step="10" value="200">
 <div class="range-row"><label for="positionRange">Положення вантажу</label><b><span id="positionValue">50</span>%</b></div><input id="positionRange" type="range" min="0" max="100" value="50">
 <div class="button-grid"><button id="leftButton">← Вліво</button><button id="forceDown">− Сила</button><button id="rightButton">Вправо →</button><button id="forceUp">+ Сила</button></div>
@@ -31,19 +30,11 @@
 <p class="hint">Клавіші: ←/→ переміщують вантаж, ↑/↓ змінюють силу, Space — прогін.</p>
 </aside>
 <section class="visual-panel">
-<div class="visual-head"><div><span class="eyebrow">МОДЕЛЬ НА ОПОРАХ</span><strong id="sceneTitle">Балка на двох опорах</strong></div><div class="visual-actions"><button class="camera-toggle" id="arButton">◎ Накладення на камеру</button><span class="pill" id="calcState">РОЗРАХУНОК ГОТОВИЙ</span></div></div>
+<div class="visual-head"><div><span class="eyebrow">ВИГЛЯД ЗБОКУ</span><strong id="sceneTitle">Балка на двох опорах</strong></div><div class="visual-actions"><span class="pill" id="calcState">РОЗРАХУНОК ГОТОВИЙ</span></div></div>
 <div class="scene-box">
-<a-scene id="bridgeScene" embedded renderer="antialias: true; alpha: true; colorManagement: true" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
-<a-entity id="bridgeRoot"></a-entity>
-<a-plane position="0 0 0" rotation="-90 0 0" width="40" height="30" color="#1c2922" material="roughness:1; metalness:0"></a-plane>
-<a-entity id="bridgeCamera" camera="active:true; fov:48" look-controls="enabled:false" position="0 6 22" rotation="-9 0 0"></a-entity>
-<a-entity light="type: ambient; intensity:1.2; color:#e5f2e6"></a-entity>
-<a-entity light="type: directional; intensity:2; color:#fff2d7" position="-8 16 9"></a-entity>
-</a-scene>
 <canvas id="bridgeFallback" aria-label="Схематична модель мосту"></canvas>
 <div class="scene-overlay"><span>НАВАНТАЖЕННЯ <b id="sceneForce">200 кН</b></span><span>ВІЗУАЛЬНИЙ ПРОГИН <b>×30</b></span></div>
 <div class="scene-caption" id="sceneCaption">Модель: шарнірна опора + роликова опора</div>
-<div class="ar-badge" id="arBadge">CAMERA PASS-THROUGH · БЕЗ ПРИВ’ЯЗКИ ДО ПЛОЩИНИ</div>
 </div>
 <div class="legend"><span><i class="safe"></i> низьке напруження</span><span><i class="warn"></i> наближення до межі</span><span><i class="danger"></i> понад навчальний поріг</span><span class="legend-note">Форма деформації збільшена; числові значення — реальні за моделлю.</span></div>
 <div class="explain" id="explainText">Пересувайте вантаж або змінюйте силу. Дивіться, як змінюється прогин і напруження.</div>
@@ -60,10 +51,11 @@
 </aside>
 </main>
 <footer class="bottom-bar">
-<div class="channels"><span class="footer-label">КАНАЛИ</span><label><input type="checkbox" id="analogSwitch" checked><i></i>Аналогові жести</label><label><input type="checkbox" id="discreteSwitch"><i></i>Дискретні жести</label><label><input type="checkbox" id="voiceSwitch"><i></i>Голос uk-UA</label><button class="preset" id="gesturePreset">Лише жести</button><button class="preset" id="hybridPreset">Гібрид C</button></div>
-<div class="hand-controls"><div class="preview"><video id="handPreview" muted playsinline></video><canvas id="handCanvas" width="320" height="240"></canvas><span id="handHint">камера неактивна</span></div><div class="voice-controls"><button class="secondary small" id="cameraButton">◎ Камера + руки</button><button class="secondary small" id="calibrateButton">◉ Калібрувати</button><button class="secondary small" id="micButton">🎙 Голос</button><span id="handStatus">вимкнено</span><span id="micStatus">мікрофон неактивний</span></div><div class="last-command" id="lastCommand">Очікування команди</div></div>
+<div class="channels"><span class="footer-label">КЕРУВАННЯ</span><label><input type="checkbox" id="analogSwitch" checked><i></i>Плавно рукою</label><label><input type="checkbox" id="discreteSwitch"><i></i>Жести-команди</label><label><input type="checkbox" id="voiceSwitch"><i></i>Голос uk-UA</label><button class="preset" id="gesturePreset">Лише жести</button><button class="preset" id="hybridPreset">Комбіноване</button></div>
+<p class="channel-note">Долоня до камери, пальці догори; центр запам’ятовується за 2 с. Рух ліворуч/праворуч пересуває вантаж. Великий і вказівний: торкнулися = 0 кН; розвести до відстані «зап’ястя—основа середнього пальця» = до 900 кН. Кулак — стоп, відкрита долоня — старт, V — інший міст.</p>
+<div class="hand-controls"><div class="preview"><video id="handPreview" muted playsinline></video><canvas id="handCanvas" width="240" height="180"></canvas><span id="handHint">камера вимкнена</span></div><div class="voice-controls"><button class="secondary small" id="cameraButton">Увімкнути камеру руки</button><button class="secondary small" id="micButton">🎙 Увімкнути голос</button><span id="handStatus">камера вимкнена</span><span id="calibrationText">Тримайте долоню по центру 2 секунди після запуску.</span><span id="micStatus">мікрофон вимкнений</span></div><div class="last-command" id="lastCommand">Команд ще не було</div><p class="voice-examples">«балка», «ферма», «арка» · «сталь», «алюміній», «деревина» · «автомобіль», «техніка», «матеріали» · «проліт 40» · «висота 8» · «сила 500» · «позиція 70 відсотків» · «старт симуляції», «стоп».</p><p class="camera-note">Камера потрібна лише для руки. Відео не кладеться на міст.</p></div>
 </footer>
-<div class="help-modal" id="helpModal" hidden><div class="help-card"><button id="closeHelp" class="close">×</button><span class="eyebrow">ПОЗА ДОЛОНІ</span><h2>Долоня до камери, пальці вгору</h2><ul><li>Рука ліворуч/праворуч від центра пересуває вантаж уздовж мосту.</li><li>Щіпка: зімкнути великий і вказівний — F=0; розвести — сила зростає до Fmax.</li><li>Кулак утримати 0,7 с — обнулити навантаження; V-поза 0,7 с — перейти до наступного типу мосту.</li><li>Голос: «балка», «ферма», «арка», «сталь», «алюміній», «деревина», «автомобіль», «будівельна техніка», «матеріали», «порівняти», «скинути».</li></ul><p>Для надійного відстеження не повертайте долоню ребром. Кнопки й клавіші працюють незалежно від камери та мікрофона.</p><button class="primary" id="closeHelp2">Зрозуміло</button></div></div>
+<div class="help-modal" id="helpModal" hidden><div class="help-card"><button id="closeHelp" class="close">×</button><span class="eyebrow">ПОКАЖУ НА ПРИКЛАДІ</span><h2>Долоня до камери · пальці догори</h2><div class="gesture-diagrams"><div><svg viewBox="0 0 120 90" role="img" aria-label="Рука рухається ліворуч і праворуч"><path d="M49 71V48l-9-10-7 3 10 18M49 48V23a5 5 0 0 1 10 0v20-25a5 5 0 0 1 10 0v26-20a5 5 0 0 1 10 0v22-14a5 5 0 0 1 10 0v26c0 13-8 21-22 21H55c-8 0-12-3-15-9" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 43h19m-6-6 6 6-6 6M105 43H86m6-6-6 6 6 6" fill="none" stroke="#ffbf69" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg><b>Рух руки вліво / вправо</b><span>Пересуває вантаж по мосту</span></div><div><svg viewBox="0 0 120 90" role="img" aria-label="Щіпка пальцями для сили"><path d="M47 72V48l-9-10-7 3 10 18M47 48V24a5 5 0 0 1 10 0v26M57 50V19a5 5 0 0 1 10 0v34m0-11 5-8a5 5 0 0 1 9 4l-6 17c-4 12-12 19-25 19H52c-8 0-13-4-16-10" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M69 12 63 20m12-8-6 8" stroke="#ffbf69" stroke-width="4" stroke-linecap="round"/></svg><b>Великий + вказівний</b><span>Дотик = 0 кН · відстань «зап’ястя—основа середнього» = до 900 кН</span></div><div><svg viewBox="0 0 120 90" role="img" aria-label="Кулак для паузи"><path d="M33 51V34a5 5 0 0 1 10 0v10-18a5 5 0 0 1 10 0v16-20a5 5 0 0 1 10 0v20-16a5 5 0 0 1 10 0v19-11a5 5 0 0 1 10 0v18c0 13-9 21-23 21h-8c-12 0-19-6-19-17" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M98 33v24m-9-12h18" stroke="#ffbf69" stroke-width="4" stroke-linecap="round"/></svg><b>Кулак / V-поза</b><span>Кулак — пауза · V — наступний міст</span></div></div><p>Плавні жести змінюють значення безперервно. Жест-команда спрацьовує як кнопка після короткого утримання.</p><p>Рівномірний шар матеріалів — пісок, щебінь або покриття, розкладені по всьому мосту; він нерухомий. Для рухомого вантажу оберіть вантажівку з матеріалами.</p><button class="primary" id="closeHelp2">Зрозуміло</button></div></div>
 </div>
 </body>
 </html>

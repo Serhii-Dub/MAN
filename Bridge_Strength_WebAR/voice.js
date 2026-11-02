@@ -1,4 +1,4 @@
-const normalize=s=>(s||"").toLocaleLowerCase("uk-UA").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^\p{L}\p{N}\s]/gu," ").replace(/\s+/g," ").trim();
+const normalize=s=>(s||"").toLocaleLowerCase("uk-UA").normalize("NFC").replace(/[’ʼ`']/g,"").replace(/[^\p{L}\p{N}\s]/gu," ").replace(/\s+/g," ").trim();
 
 export class VoiceController {
   constructor({onText,onStatus}) {
